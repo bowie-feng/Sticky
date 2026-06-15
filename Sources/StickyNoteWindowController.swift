@@ -23,6 +23,7 @@ final class StickyNoteWindowController: NSWindowController, NSWindowDelegate {
                 store: store,
                 noteID: noteID,
                 onClose: { [weak self] in self?.closeNote() },
+                onTitleChanged: { title in store.updateTitle(noteID, title: title) },
                 onContentChanged: { text in store.updateContent(noteID, content: text) },
                 onColorChange: { hex in store.updateColor(noteID, hex: hex) },
                 onOpacityChange: { val in

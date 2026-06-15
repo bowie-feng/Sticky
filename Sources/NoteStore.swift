@@ -35,7 +35,16 @@ final class NoteStore: ObservableObject {
 
     func updateContent(_ id: UUID, content: String) {
         guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
-        notes[i].content = content
+        // Auto-sort todo items: unchecked first, checked at bottom
+        let sorted = NoteStore.sortTodos(in: content)
+        notes[i].content = sorted
+        notes[i].updatedAt = Date()
+        scheduleSave()
+    }
+
+    func updateTitle(_ id: UUID, title: String) {
+        guard let i = notes.firstIndex(where: { $0.id == id }) else { return }
+        notes[i].title = title
         notes[i].updatedAt = Date()
         scheduleSave()
     }
@@ -134,5 +143,58 @@ final class NoteStore: ObservableObject {
         let x = Double.random(in: visible.minX + 50 ... visible.maxX - 300)
         let y = Double.random(in: visible.minY + 50 ... visible.maxY - 300)
         return CGPoint(x: x, y: y)
+    }
+
+    // MARK: - Todo Auto-Sort
+
+    /// Sorts todo blocks in the given text: unchecked items (`- [ ]`) on top,
+    /// checked items (`- [x]` or `- [X]`) at bottom. Non-todo lines are left
+    /// in place between blocks.
+    static func sortTodos(in text: String) -> String {
+        let lines = text.components(separatedBy: .newlines)
+        var result: [String] = []
+        var todoBlock: [String] = []
+        var inTodoBlock = false
+
+        for line in lines {
+            let isTodo = isTodoLine(line)
+
+            if isTodo {
+                inTodoBlock = true
+                todoBlock.append(line)
+            } else {
+                if inTodoBlock {
+                    // flush sorted block
+                    result.append(contentsOf: sortTodoBlock(todoBlock))
+                    todoBlock = []
+                    inTodoBlock = false
+                }
+                result.append(line)
+            }
+        }
+
+        // Flush trailing todo block
+        if inTodoBlock {
+            result.append(contentsOf: sortTodoBlock(todoBlock))
+        }
+
+        return result.joined(separator: "\n")
+    }
+
+    private static func isTodoLine(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        return trimmed.hasPrefix("- [ ]") || trimmed.hasPrefix("- [x]") || trimmed.hasPrefix("- [X]")
+    }
+
+    private static func sortTodoBlock(_ block: [String]) -> [String] {
+        let unchecked = block.filter { line in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            return t.hasPrefix("- [ ]")
+        }
+        let checked = block.filter { line in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            return t.hasPrefix("- [x]") || t.hasPrefix("- [X]")
+        }
+        return unchecked + checked
     }
 }

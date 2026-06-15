@@ -5,11 +5,13 @@ struct StickyNoteView: View {
     @ObservedObject var store: NoteStore
     let noteID: UUID
 
+    @State private var title: String = ""
     @State private var text: String = ""
     @FocusState private var isFocused: Bool
 
     // Callbacks
     var onClose: () -> Void
+    var onTitleChanged: (String) -> Void
     var onContentChanged: (String) -> Void
     var onColorChange: (String) -> Void
     var onOpacityChange: (Double) -> Void
@@ -49,6 +51,21 @@ struct StickyNoteView: View {
                     .padding([.top, .trailing], 6)
                 }
 
+                // ---- Title Field ----
+                TextField("标题", text: $title)
+                    .font(.system(size: (note?.fontSize ?? 14) + 2, weight: .bold))
+                    .textFieldStyle(.plain)
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 10)
+                    .padding(.top, 2)
+                    .onChange(of: title) { _, newValue in
+                        onTitleChanged(newValue)
+                    }
+
+                Divider()
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+
                 // ---- Text Editor ----
                 if let note {
                     TextEditor(text: $text)
@@ -74,7 +91,13 @@ struct StickyNoteView: View {
             }
         }
         .onAppear {
+            title = note?.title ?? ""
             text = note?.content ?? ""
+        }
+        .onChange(of: note?.title) { _, newValue in
+            if let newValue, title != newValue {
+                title = newValue
+            }
         }
         .onChange(of: note?.content) { _, newValue in
             if let newValue, text != newValue {

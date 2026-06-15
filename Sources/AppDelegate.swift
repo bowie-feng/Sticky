@@ -56,6 +56,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store.saveNow()
     }
 
+    @objc func openSettings(_ sender: Any?) {
+        SettingsWindowController.shared.show()
+    }
+
     // MARK: - Window Management
 
     func openWindow(for note: StickyNote) {
@@ -87,6 +91,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             title: "关于 \(appName)",
             action: #selector(NSApplication.orderFrontStandardAboutPanel(_:)),
             keyEquivalent: ""
+        ))
+        appMenu.addItem(.separator())
+        appMenu.addItem(NSMenuItem(
+            title: "设置…",
+            action: #selector(openSettings(_:)),
+            keyEquivalent: ","
         ))
         appMenu.addItem(.separator())
         appMenu.addItem(NSMenuItem(
