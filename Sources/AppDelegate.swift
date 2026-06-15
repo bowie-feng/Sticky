@@ -9,8 +9,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let store = NoteStore.shared
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Build main menu first
-        buildMainMenu()
+        // ⚠️ Must defer menu building until after SwiftUI App has finished
+        // its scene setup. Otherwise SwiftUI's default menu overwrites ours.
+        DispatchQueue.main.async { [weak self] in
+            self?.buildMainMenu()
+        }
 
         // Restore saved notes
         for note in store.notes {
@@ -35,6 +38,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         store.saveNow()
+    }
+
+    // MARK: - Dock Menu
+
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(
+            title: "新建便条",
+            action: #selector(newNote(_:)),
+            keyEquivalent: ""
+        ))
+        menu.addItem(.separator())
+        menu.addItem(NSMenuItem(
+            title: "设置…",
+            action: #selector(openSettings(_:)),
+            keyEquivalent: ""
+        ))
+        return menu
     }
 
     // MARK: - Actions
